@@ -28,6 +28,7 @@ extern "C" {
     void vCreateAndVerifyExampleFiles(const char *pcMountPath);
     void vStdioWithCWDTest(const char *pcMountPath);
     bool process_logger();
+    int example_compression_function();
 }
 
 static bool logger_enabled;
@@ -342,6 +343,9 @@ static void run_start_logger() {
     logger_enabled = true;
     next_log_time = delayed_by_ms(get_absolute_time(), period);
 }
+static void icer_test() {
+    example_compression_function();
+}
 static void run_stop_logger() { logger_enabled = false; }
 static void run_help();
 
@@ -421,9 +425,6 @@ static cmd_def_t cmds[] = {
     {"start_logger", run_start_logger,
      "start_logger:\n"
      "  Start Data Log Demo"},
-    {"stop_logger", run_stop_logger,
-     "stop_logger:\n"
-     "  Stop Data Log Demo"},
      {"icer-test", icer_test,
      "icer-test:\n"
      "  Runs the ICER test using the SDCard API."},

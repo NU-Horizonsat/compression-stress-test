@@ -11,11 +11,23 @@
 #define USE_UINT16_FUNCTIONS
 
 #include "icer.h"
+#include "ff.h"
 
 const char compressed_filename[] = "../compressed.bin";
 const char filename[] = "../boat.512.bmp";
 
-int main() {
+size_t custom_fread(void *ptr, size_t size, size_t nmemb, FIL *stream) {
+    UINT* br;
+    f_read(stream, ptr, size * nmemb, br);
+    size_t return_val = *br;
+    return return_val;
+}
+
+int custom_feof(FIL* f) {
+    return f_eof(f);
+}
+
+int example_compression_function() {
     const size_t out_w = 512;
     const size_t out_h = 512;
     const int stages = 4;
@@ -36,6 +48,15 @@ int main() {
     icer_init();
 
     printf("test compression code\n");
+
+    stbi_io_callbacks custom_callbacks = {
+        .read = custom_fread,
+        .skip = NULL,  // Set to NULL if not needed
+        .eof = custom_feof,   // Set to NULL if not needed
+    };
+
+    stbi_set_callbacks(custom_callbacks);
+
 
     printf("loading image: \"%s\"\n", filename);
     data = stbi_load(filename, &src_w, &src_h, &n, 1);

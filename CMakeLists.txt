@@ -11,21 +11,28 @@ set(CMAKE_CXX_STANDARD 17)
 # Initialise the Pico SDK
 pico_sdk_init()
 
-add_subdirectory(./libs/FatFs_SPI build)
+add_subdirectory(libs/FatFs_SPI)
+include_directories(libs/icer/inc)
+include_directories(example/inc)
 
 # Add executable. Default name is the project name, version 0.1
 add_executable(FatFS_SPI_example 
     FatFS_SPI_example.cpp 
-    hw_config.c
-    data_log_demo.c
+    sd_config/hw_config.c
+    sd_config/data_log_demo.c
     tests/simple.c
     tests/app4-IO_module_function_checker.c
     tests/big_file_test.c
     tests/CreateAndVerifyExampleFiles.c
     tests/ff_stdio_tests_with_cwd.c
+    example/src/example_encode.c
+    example/inc/color_util.h
+    example/src/stb_lib.c
 )
 # Add the standard library to the build
 target_link_libraries(FatFS_SPI_example pico_stdlib)
+add_subdirectory(libs/icer)
+target_link_libraries(FatFS_SPI_example icer)
 
 target_compile_options(FatFS_SPI_example PUBLIC -Wall -Wextra -Wno-unused-function -Wno-unused-parameter)
 

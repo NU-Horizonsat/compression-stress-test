@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "ff.h": "c",
+        "cstdio": "cpp",
+        "stb_image.h": "c"
+    }
+}
