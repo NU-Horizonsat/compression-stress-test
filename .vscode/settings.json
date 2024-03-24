@@ -2,6 +2,7 @@
     "files.associations": {
         "ff.h": "c",
         "cstdio": "cpp",
-        "stb_image.h": "c"
+        "stb_image.h": "c",
+        "time.h": "c"
     }
 }

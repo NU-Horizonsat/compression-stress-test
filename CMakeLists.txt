@@ -34,7 +34,7 @@ target_link_libraries(FatFS_SPI_example pico_stdlib)
 add_subdirectory(libs/icer)
 target_link_libraries(FatFS_SPI_example icer)
 
-target_compile_options(FatFS_SPI_example PUBLIC -Wall -Wextra -Wno-unused-function -Wno-unused-parameter)
+target_compile_options(FatFS_SPI_example PUBLIC -Wall -Wextra -Wno-unused-function -Wno-unused-parameter -mthumb -mcpu=cortex-m0 -ffreestanding -fno-builtin -mfloat-abi=soft -nostdlib)
 
 # Use Pico's LED to show drive activity. 
 # Ensure that PICO_DEFAULT_LED_PIN is set correctly.
