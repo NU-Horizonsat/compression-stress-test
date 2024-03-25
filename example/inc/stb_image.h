@@ -1139,12 +1139,15 @@ static void *stbi__load_main(stbi__context *s, int *x, int *y, int *comp, int re
    ri->channel_order = STBI_ORDER_RGB; // all current input & output are this, but this is here so we can add BGR order
    ri->num_channels = 0;
 
+   printf("We managed to memset, lets try identifying our file type...\n");
    // test the formats with a very explicit header first (at least a FOURCC
    // or distinctive magic number first)
    #ifndef STBI_NO_PNG
+   printf("We shouldn't select this, we aren't using png!...\n");
    if (stbi__png_test(s))  return stbi__png_load(s,x,y,comp,req_comp, ri);
    #endif
    #ifndef STBI_NO_BMP
+   printf("We should select this, due to using BMP...\n");
    if (stbi__bmp_test(s))  return stbi__bmp_load(s,x,y,comp,req_comp, ri);
    #endif
    #ifndef STBI_NO_GIF
@@ -1258,6 +1261,7 @@ static void stbi__vertical_flip_slices(void *image, int w, int h, int z, int byt
 static unsigned char *stbi__load_and_postprocess_8bit(stbi__context *s, int *x, int *y, int *comp, int req_comp)
 {
    stbi__result_info ri;
+   printf("Loading main...\n");
    void *result = stbi__load_main(s, x, y, comp, req_comp, &ri, 8);
 
    if (result == NULL)
@@ -1267,6 +1271,7 @@ static unsigned char *stbi__load_and_postprocess_8bit(stbi__context *s, int *x, 
    STBI_ASSERT(ri.bits_per_channel == 8 || ri.bits_per_channel == 16);
 
    if (ri.bits_per_channel != 8) {
+      printf("We need to convert from 16, to 8...\n");
       result = stbi__convert_16_to_8((stbi__uint16 *) result, *x, *y, req_comp == 0 ? *comp : req_comp);
       ri.bits_per_channel = 8;
    }
@@ -1361,6 +1366,7 @@ STBIDEF stbi_uc *stbi_load(char const *filename, int *x, int *y, int *comp, int 
    FIL fil;
    FRESULT fr = f_open(&fil, filename, FA_READ);
    unsigned char *result;
+   printf("Finished opening, trying to load...\n");
    result = stbi_load_from_file(&fil,x,y,comp,req_comp);
    f_close(&fil);
    return result;
@@ -1371,11 +1377,13 @@ STBIDEF stbi_uc *stbi_load_from_file(FIL *f, int *x, int *y, int *comp, int req_
    unsigned char *result;
    stbi__context s;
    stbi__start_file(&s,f);
+   printf("Trying to post-process now...\n");
    result = stbi__load_and_postprocess_8bit(&s,x,y,comp,req_comp);
-   //if (result) {
-   //   // need to 'unget' all the characters in the IO buffer
-   //   fseek(f, - (int) (s.img_buffer_end - s.img_buffer), SEEK_CUR);
-   //}
+   printf("Done post processing, lets go!\n");
+   if (result) {
+   // need to 'unget' all the characters in the IO buffer
+      f_lseek(f, - (int) (s.img_buffer_end - s.img_buffer));
+   }
    return result;
 }
 
@@ -1606,12 +1614,17 @@ static void stbi__refill_buffer(stbi__context *s)
 
 stbi_inline static stbi_uc stbi__get8(stbi__context *s)
 {
+   printf("We are in get8\n");
    if (s->img_buffer < s->img_buffer_end)
+      printf("get A\n");
+      printf("Our length is %zu\n", strlen(*s->img_buffer));
       return *s->img_buffer++;
    if (s->read_from_callbacks) {
+      printf("get B\n");
       stbi__refill_buffer(s);
       return *s->img_buffer++;
    }
+   printf("We exited without a case!\n");
    return 0;
 }
 
@@ -5352,8 +5365,10 @@ static int stbi__bmp_test_raw(stbi__context *s)
 
 static int stbi__bmp_test(stbi__context *s)
 {
+   printf("Starting the test...\n");
    int r = stbi__bmp_test_raw(s);
    stbi__rewind(s);
+   printf("Done with the test!\n");
    return r;
 }
 
@@ -5522,6 +5537,7 @@ static void *stbi__bmp_parse_header(stbi__context *s, stbi__bmp_data *info)
 
 static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req_comp, stbi__result_info *ri)
 {
+   printf("Starting the bmp load...\n");
    stbi_uc *out;
    unsigned int mr=0,mg=0,mb=0,ma=0, all_a;
    stbi_uc pal[256][4];
@@ -5534,6 +5550,7 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
    if (stbi__bmp_parse_header(s, &info) == NULL)
       return NULL; // error code already set
 
+   printf("Finished parsing the header...\n");
    flip_vertically = ((int) s->img_y) > 0;
    s->img_y = abs((int) s->img_y);
 
@@ -5573,6 +5590,7 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
       }
    }
 
+   printf("Checkpoint 1...\n");
    if (info.bpp == 24 && ma == 0xff000000)
       s->img_n = 3;
    else
@@ -5586,6 +5604,7 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
    if (!stbi__mad3sizes_valid(target, s->img_x, s->img_y, 0))
       return stbi__errpuc("too large", "Corrupt BMP");
 
+   printf("Checkpoint 1.1...\n");
    out = (stbi_uc *) stbi__malloc_mad3(target, s->img_x, s->img_y, 0);
    if (!out) return stbi__errpuc("outofmem", "Out of memory");
    if (info.bpp < 16) {
@@ -5598,6 +5617,7 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
          if (info.hsz != 12) stbi__get8(s);
          pal[i][3] = 255;
       }
+      printf("Checkpoint 1.1a...\n");
       stbi__skip(s, info.offset - info.extra_read - info.hsz - psize * (info.hsz == 12 ? 3 : 4));
       if (info.bpp == 1) width = (s->img_x + 7) >> 3;
       else if (info.bpp == 4) width = (s->img_x + 1) >> 1;
@@ -5622,6 +5642,7 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
             stbi__skip(s, pad);
          }
       } else {
+         printf("Checkpoint 1.1b...\n");
          for (j=0; j < (int) s->img_y; ++j) {
             for (i=0; i < (int) s->img_x; i += 2) {
                int v=stbi__get8(s),v2=0;
@@ -5644,6 +5665,7 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
          }
       }
    } else {
+      printf("Checkpoint 1.2a...\n");
       int rshift=0,gshift=0,bshift=0,ashift=0,rcount=0,gcount=0,bcount=0,acount=0;
       int z = 0;
       int easy=0;
@@ -5667,19 +5689,29 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
          ashift = stbi__high_bit(ma)-7; acount = stbi__bitcount(ma);
          if (rcount > 8 || gcount > 8 || bcount > 8 || acount > 8) { STBI_FREE(out); return stbi__errpuc("bad masks", "Corrupt BMP"); }
       }
+      printf("Checkpoint 1.3a...\n");
       for (j=0; j < (int) s->img_y; ++j) {
+         printf("At begining \n");
          if (easy) {
+            printf("At first case, will it loop?\n");
             for (i=0; i < (int) s->img_x; ++i) {
+               printf("We are in the first case\n");
                unsigned char a;
                out[z+2] = stbi__get8(s);
+               printf("Problem A\n");
                out[z+1] = stbi__get8(s);
+               printf("Problem B\n");
                out[z+0] = stbi__get8(s);
+               printf("Problem C\n");
                z += 3;
+               printf("We are in this case now?\n");
                a = (easy == 2 ? stbi__get8(s) : 255);
                all_a |= a;
                if (target == 4) out[z++] = a;
+               printf("We are done with all?\n");
             }
          } else {
+            printf("At second case, will it loop?\n");
             int bpp = info.bpp;
             for (i=0; i < (int) s->img_x; ++i) {
                stbi__uint32 v = (bpp == 16 ? (stbi__uint32) stbi__get16le(s) : stbi__get32le(s));
@@ -5689,13 +5721,19 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
                out[z++] = STBI__BYTECAST(stbi__shiftsigned(v & mb, bshift, bcount));
                a = (ma ? stbi__shiftsigned(v & ma, ashift, acount) : 255);
                all_a |= a;
+               printf("Locked in other loop...\n");
                if (target == 4) out[z++] = STBI__BYTECAST(a);
             }
+            printf("Second Case...\n");
          }
+         printf("Trying to skip, what will happen?\n");
          stbi__skip(s, pad);
+         //printf("Post skip...\n");
+         printf("Our y is %lu, our cur is %zu\n",s->img_y, j);
       }
    }
 
+   printf("Checkpoint 2...\n");
    // if alpha channel is all 0s, replace with all 255s
    if (target == 4 && all_a == 0)
       for (i=4*s->img_x*s->img_y-1; i >= 0; i -= 4)
@@ -5712,6 +5750,7 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
       }
    }
 
+   printf("Checkpoint 3...\n");
    if (req_comp && req_comp != target) {
       out = stbi__convert_format(out, target, req_comp, s->img_x, s->img_y);
       if (out == NULL) return out; // stbi__convert_format frees input on failure

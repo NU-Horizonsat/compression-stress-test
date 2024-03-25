@@ -13,12 +13,12 @@
 #include "icer.h"
 #include "ff.h"
 
-const char compressed_filename[] = "../compressed.bin";
-const char filename[] = "../boat.512.bmp";
+const char compressed_filename[] = "compressed.bin";
+const char filename[] = "boat.512.bmp";
 
 int example_compression_function() {
-    const size_t out_w = 512;
-    const size_t out_h = 512;
+    const size_t out_w = 16;
+    const size_t out_h = 16;
     const int stages = 4;
     const enum icer_filter_types filt = ICER_FILTER_A;
     const int segments = 6;
@@ -30,14 +30,13 @@ int example_compression_function() {
 
     uint8_t *resized = malloc(out_w*out_h);
     uint16_t *compress = malloc(out_w*out_h*2);
-
+   
     int res = 0;
     clock_t begin, end;
 
     icer_init();
 
     printf("test compression code\n");
-
     printf("loading image: \"%s\"\n", filename);
     data = stbi_load(filename, &src_w, &src_h, &n, 1);
     if (data == NULL) {
@@ -67,13 +66,13 @@ int example_compression_function() {
     icer_init_output_struct(&output, datastream, datastream_size*2, datastream_size);
 
     begin = clock();
-    icer_compress_image_uint16(compress, out_w, out_h, stages, filt, segments, &output);
+    icer_compress_image_uint8(compress, out_w, out_h, stages, filt, segments, &output);
     end = clock();
 
     printf("compressed size %u, time taken: %lf\n", output.size_used, (float)(end-begin)/CLOCKS_PER_SEC);
 
     FIL fil;
-    f_open(&fil, filename, FA_READ);
+    f_open(&fil, compressed_filename, FA_CREATE_ALWAYS | FA_WRITE);
     UINT *bw = 0;
     f_write(&fil, output.rearrange_start, sizeof(output.rearrange_start[0]) * output.size_used, bw);
     printf("written: %u\n", *bw);
@@ -86,6 +85,5 @@ int example_compression_function() {
     free(compress);
     free(datastream);
     stbi_image_free(data);
-
     return 0;
 }
