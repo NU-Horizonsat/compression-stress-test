@@ -3,6 +3,9 @@
         "ff.h": "c",
         "cstdio": "cpp",
         "stb_image.h": "c",
-        "time.h": "c"
-    }
+        "time.h": "c",
+        "stdbool.h": "c",
+        "random": "c"
+    },
+    "cortex-debug.gdbPath": "gdb-multiarch"
 }

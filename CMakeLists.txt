@@ -28,6 +28,7 @@ add_executable(FatFS_SPI_example
     example/src/example_encode.c
     example/inc/color_util.h
     example/src/stb_lib.c
+    inspect_mem.c
 )
 # Add the standard library to the build
 target_link_libraries(FatFS_SPI_example pico_stdlib)

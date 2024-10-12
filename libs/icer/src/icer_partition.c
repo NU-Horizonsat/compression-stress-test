@@ -292,6 +292,7 @@ int icer_compress_partition_uint16(const uint16_t *data, const partition_param_t
     icer_image_segment_typedef *seg;
 
     uint32_t data_in_bytes;
+    printf("1\n");
     /*
      * process top region which consists of c columns
      * height of top region is h_t and it contains r_t rows
@@ -311,11 +312,9 @@ int icer_compress_partition_uint16(const uint16_t *data, const partition_param_t
             segment_w = params->x_t + ((col >= params->c_t0) ? 1 : 0);
             segment_start = data + partition_row_ind * rowstride + partition_col_ind;
             partition_col_ind += segment_w;
-
             icer_init_context_model_vals(&context_model, pkt_context->subband_type);
             res = icer_allocate_data_packet(&seg, output_data, segment_num, pkt_context);
             if (res != ICER_RESULT_OK) return res;
-
             icer_init_entropy_coder_context(&context, icer_encode_circ_buf, ICER_CIRC_BUF_SIZE,
                                             (uint8_t *) seg + sizeof(icer_image_segment_typedef), seg->data_length);
             res = icer_compress_bitplane_uint16(segment_start, segment_w, segment_h, rowstride, &context_model, &context,
@@ -332,9 +331,9 @@ int icer_compress_partition_uint16(const uint16_t *data, const partition_param_t
             output_data->size_used += data_in_bytes;
 
             segments_encoded[segment_num] = seg;
-
             segment_num++;
         }
+        free(seg);
         partition_row_ind += segment_h;
     }
 
@@ -347,9 +346,11 @@ int icer_compress_partition_uint16(const uint16_t *data, const partition_param_t
          * the first r_b0 rows have height y_b
          * the remainder have height y_b + 1
          */
+        printf("5a\n");
         segment_h = params->y_b + ((row >= params->r_b0) ? 1 : 0);
         partition_col_ind = 0;
 
+        printf("5\n");
         for (uint16_t col = 0; col < (params->c + 1); col++) {
             /* the first c_b0 columns have width x_b
              * the remainder have width x_b + 1
@@ -359,9 +360,12 @@ int icer_compress_partition_uint16(const uint16_t *data, const partition_param_t
             partition_col_ind += segment_w;
 
             icer_init_context_model_vals(&context_model, pkt_context->subband_type);
+            printf("Before\n");
             res = icer_allocate_data_packet(&seg, output_data, segment_num, pkt_context);
+            printf("After\n");
             if (res != ICER_RESULT_OK) return res;
 
+            printf("6\n");
             icer_init_entropy_coder_context(&context, icer_encode_circ_buf, ICER_CIRC_BUF_SIZE,
                                             (uint8_t *) seg + sizeof(icer_image_segment_typedef), seg->data_length);
             res = icer_compress_bitplane_uint16(segment_start, segment_w, segment_h, rowstride, &context_model, &context,
@@ -371,6 +375,7 @@ int icer_compress_partition_uint16(const uint16_t *data, const partition_param_t
                 return res;
             }
 
+            printf("7\n");
             data_in_bytes = context.output_ind + (context.output_bit_offset > 0);
             seg->data_length = context.output_ind * 8 + context.output_bit_offset;
             seg->data_crc32 = icer_calculate_segment_crc32(seg);
@@ -382,8 +387,10 @@ int icer_compress_partition_uint16(const uint16_t *data, const partition_param_t
             segment_num++;
         }
         partition_row_ind += segment_h;
+        //free(seg);
     }
 
+    printf("8\n");
     return ICER_RESULT_OK;
 }
 #endif

@@ -368,6 +368,8 @@ RECENT REVISION HISTORY:
 
 #ifndef STBI_NO_STDIO
 #include <stdio.h>
+#include <unistd.h>
+#include "pico/stdlib.h"
 #endif // STBI_NO_STDIO
 
 #define STBI_VERSION 1
@@ -460,7 +462,7 @@ STBIDEF stbi_us *stbi_load_from_file_16(FILE *f, int *x, int *y, int *channels_i
 
    #ifndef STBI_NO_STDIO
    STBIDEF float *stbi_loadf            (char const *filename, int *x, int *y, int *channels_in_file, int desired_channels);
-   STBIDEF float *stbi_loadf_from_file  (FILE *f, int *x, int *y, int *channels_in_file, int desired_channels);
+   STBIDEF float *stbi_loadf_from_file  (FIL *f, int *x, int *y, int *channels_in_file, int desired_channels);
    #endif
 #endif
 
@@ -479,7 +481,7 @@ STBIDEF int    stbi_is_hdr_from_callbacks(stbi_io_callbacks const *clbk, void *u
 STBIDEF int    stbi_is_hdr_from_memory(stbi_uc const *buffer, int len);
 #ifndef STBI_NO_STDIO
 STBIDEF int      stbi_is_hdr          (char const *filename);
-STBIDEF int      stbi_is_hdr_from_file(FILE *f);
+STBIDEF int      stbi_is_hdr_from_file(FIL *f);
 #endif // STBI_NO_STDIO
 
 
@@ -500,7 +502,7 @@ STBIDEF int      stbi_is_16_bit_from_callbacks(stbi_io_callbacks const *clbk, vo
 STBIDEF int      stbi_info               (char const *filename,     int *x, int *y, int *comp);
 STBIDEF int      stbi_info_from_file     (FILE *f,                  int *x, int *y, int *comp);
 STBIDEF int      stbi_is_16_bit          (char const *filename);
-STBIDEF int      stbi_is_16_bit_from_file(FILE *f);
+STBIDEF int      stbi_is_16_bit_from_file(FIL *f);
 #endif
 
 
@@ -835,23 +837,36 @@ static void stbi__start_mem(stbi__context *s, stbi_uc const *buffer, int len)
 // initialize a callback-based context
 static void stbi__start_callbacks(stbi__context *s, stbi_io_callbacks *c, void *user)
 {
+   printf("1\n");
    s->io = *c;
+   printf("2\n");
    s->io_user_data = user;
+   printf("3\n");
    s->buflen = sizeof(s->buffer_start);
+   printf("4\n");
    s->read_from_callbacks = 1;
+   printf("5\n");
    s->callback_already_read = 0;
+   printf("6\n");
    s->img_buffer = s->img_buffer_original = s->buffer_start;
+   printf("7\n");
    stbi__refill_buffer(s);
+   printf("8\n");
    s->img_buffer_original_end = s->img_buffer_end;
+   printf("9\n");
 }
 
 #ifndef STBI_NO_STDIO
 
 static int stbi__stdio_read(void *user, char *data, int size)
 {
-   UINT* br = 0;
-   f_read((FIL *) user, data, size, br);
-   int return_val = *br;
+   printf("Attempted to perform the read!");
+   UINT br = 0;  // Properly declare a UINT variable
+   printf("1!");
+   f_read((FIL *) user, data, size, &br);  // Pass the address of 'br'
+   printf("2!");
+   int return_val = br;  // Now, 'br' is valid and contains the number of bytes read
+   printf("3!");
    return return_val;
 }
 
@@ -1365,6 +1380,8 @@ STBIDEF stbi_uc *stbi_load(char const *filename, int *x, int *y, int *comp, int 
 {
    FIL fil;
    FRESULT fr = f_open(&fil, filename, FA_READ);
+   printf("FRESULT: %d\n", fr);
+
    unsigned char *result;
    printf("Finished opening, trying to load...\n");
    result = stbi_load_from_file(&fil,x,y,comp,req_comp);
@@ -1376,6 +1393,7 @@ STBIDEF stbi_uc *stbi_load_from_file(FIL *f, int *x, int *y, int *comp, int req_
 {
    unsigned char *result;
    stbi__context s;
+   printf("Starting file..\n");
    stbi__start_file(&s,f);
    printf("Trying to post-process now...\n");
    result = stbi__load_and_postprocess_8bit(&s,x,y,comp,req_comp);
@@ -1501,7 +1519,7 @@ STBIDEF float *stbi_loadf(char const *filename, int *x, int *y, int *comp, int r
    return result;
 }
 
-STBIDEF float *stbi_loadf_from_file(FILE *f, int *x, int *y, int *comp, int req_comp)
+STBIDEF float *stbi_loadf_from_file(FIL *f, int *x, int *y, int *comp, int req_comp)
 {
    stbi__context s;
    stbi__start_file(&s,f);
@@ -1540,7 +1558,7 @@ STBIDEF int      stbi_is_hdr          (char const *filename)
    return result;
 }
 
-STBIDEF int stbi_is_hdr_from_file(FILE *f)
+STBIDEF int stbi_is_hdr_from_file(FIL *f)
 {
    #ifndef STBI_NO_HDR
    long pos = ftell(f);
@@ -1597,34 +1615,100 @@ enum
 
 static void stbi__refill_buffer(stbi__context *s)
 {
-   int n = (s->io.read)(s->io_user_data,(char*)s->buffer_start,s->buflen);
+   printf("1.1\n");
+   if (s->io.read == NULL) {
+        printf("Warning: s->io.read is NULL.\n");
+    } else {
+        printf("s->io.read is valid.\n");
+    }
+
+    // Print buffer size and buffer start
+    printf("s->buflen = %d\n", s->buflen);
+    if (s->buffer_start == NULL) {
+        printf("Warning: s->buffer_start is NULL.\n");
+    } else {
+        printf("s->buffer_start = %p\n", (void*)s->buffer_start);
+    }
+
+    // Check if img_buffer and img_buffer_original are valid
+    if (s->img_buffer == NULL) {
+        printf("Warning: s->img_buffer is NULL.\n");
+    } else {
+        printf("s->img_buffer = %p\n", (void*)s->img_buffer);
+    }
+
+    if (s->img_buffer_original == NULL) {
+        printf("Warning: s->img_buffer_original is NULL.\n");
+    } else {
+        printf("s->img_buffer_original = %p\n", (void*)s->img_buffer_original);
+    }
+
+    // Check pointer arithmetic (img_buffer - img_buffer_original)
+    if (s->img_buffer != NULL && s->img_buffer_original != NULL) {
+        ptrdiff_t diff = s->img_buffer - s->img_buffer_original;
+        printf("Difference between img_buffer and img_buffer_original: %ld\n", (long)diff);
+        if (diff < 0) {
+            printf("Warning: Negative pointer difference detected.\n");
+        } else {
+            printf("Pointer difference seems reasonable.\n");
+        }
+    }
+
+    // Check the callback_already_read value
+   printf("s->callback_already_read = %d\n", s->callback_already_read);
+   // Step 1: Extract the function pointer
+   typedef int (*io_read_fn)(void*, char*, int);
+   io_read_fn read_fn = s->io.read;
+   printf("Step 1: Function pointer read_fn = %p\n", (void*)read_fn);
+
+   // Step 2: Check the io_user_data argument
+   void* user_data = s->io_user_data;
+   printf("Step 2: io_user_data = %p\n", user_data);
+
+   // Step 3: Cast buffer_start to char* and check
+   char* buffer = (char*)s->buffer_start;
+   printf("Step 3: buffer_start (as char*) = %p\n", (void*)buffer);
+
+   // Step 4: Check the buflen
+   int buflen = s->buflen;
+   printf("Step 4: buflen = %d\n", buflen);
+
+   // Step 5: Perform the read operation and store the return value
+   int n = read_fn(user_data, buffer, buflen);
+   printf("Step 5: Read operation returned n = %d\n", n);
+
+   printf("Intermediary \n");
    s->callback_already_read += (int) (s->img_buffer - s->img_buffer_original);
+   printf("1.2\n");
    if (n == 0) {
       // at end of file, treat same as if from memory, but need to handle case
       // where s->img_buffer isn't pointing to safe memory, e.g. 0-byte file
+      printf("1.3\n");
       s->read_from_callbacks = 0;
       s->img_buffer = s->buffer_start;
       s->img_buffer_end = s->buffer_start+1;
       *s->img_buffer = 0;
+      printf("1.4\n");
    } else {
+      printf("1.5\n");
       s->img_buffer = s->buffer_start;
       s->img_buffer_end = s->buffer_start + n;
+      printf("1.6\n");
    }
 }
 
 stbi_inline static stbi_uc stbi__get8(stbi__context *s)
 {
-   printf("We are in get8\n");
    if (s->img_buffer < s->img_buffer_end)
-      printf("get A\n");
-      printf("Our length is %zu\n", strlen(*s->img_buffer));
+      //printf("Buffer Comp\n");
+      //printf("%u\n", &s->img_buffer);
+      //printf("%u\n", &s->img_buffer_end);
       return *s->img_buffer++;
    if (s->read_from_callbacks) {
-      printf("get B\n");
       stbi__refill_buffer(s);
       return *s->img_buffer++;
    }
-   printf("We exited without a case!\n");
+   printf("case 3");
    return 0;
 }
 
@@ -5606,6 +5690,8 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
 
    printf("Checkpoint 1.1...\n");
    out = (stbi_uc *) stbi__malloc_mad3(target, s->img_x, s->img_y, 0);
+   printf("The x size is %lu", s->img_x);
+   printf("The y size is %lu", s->img_y);
    if (!out) return stbi__errpuc("outofmem", "Out of memory");
    if (info.bpp < 16) {
       int z=0;
@@ -5691,27 +5777,58 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
       }
       printf("Checkpoint 1.3a...\n");
       for (j=0; j < (int) s->img_y; ++j) {
-         printf("At begining \n");
          if (easy) {
-            printf("At first case, will it loop?\n");
             for (i=0; i < (int) s->img_x; ++i) {
-               printf("We are in the first case\n");
                unsigned char a;
-               out[z+2] = stbi__get8(s);
-               printf("Problem A\n");
-               out[z+1] = stbi__get8(s);
-               printf("Problem B\n");
-               out[z+0] = stbi__get8(s);
-               printf("Problem C\n");
+               stbi_uc temp_var1;
+               if (s->img_buffer < s->img_buffer_end) {
+                  temp_var1 = *s->img_buffer++;
+               }
+               else if (s->read_from_callbacks) {
+                  stbi__refill_buffer(s);
+                  temp_var1 = *s->img_buffer++;
+               }
+               else {
+                  temp_var1 = 0;
+               }
+               out[z+2] = temp_var1;
+
+               stbi_uc temp_var2;
+               if (s->img_buffer < s->img_buffer_end) {
+                  temp_var2 = *s->img_buffer++;
+               }
+               else if (s->read_from_callbacks) {
+                  stbi__refill_buffer(s);
+                  temp_var2 = *s->img_buffer++;
+               }
+               else {
+                  temp_var2 = 0;
+               }
+               out[z+1] = temp_var2;
+
+               printf("We are stuck at this point\n");
+               stbi_uc temp_var3;
+               if (s->img_buffer < s->img_buffer_end) {
+                  printf("Here\n");
+                  temp_var3 = *s->img_buffer++;
+               }
+               else if (s->read_from_callbacks) {
+                  printf("There\n");
+                  stbi__refill_buffer(s);
+                  temp_var3 = *s->img_buffer++;
+               }
+               else {
+                  printf("Where\n");
+                  temp_var3 = 0;
+               }
+               printf("Actually, this point\n");
+               out[z+0] = temp_var3;
                z += 3;
-               printf("We are in this case now?\n");
                a = (easy == 2 ? stbi__get8(s) : 255);
                all_a |= a;
                if (target == 4) out[z++] = a;
-               printf("We are done with all?\n");
             }
          } else {
-            printf("At second case, will it loop?\n");
             int bpp = info.bpp;
             for (i=0; i < (int) s->img_x; ++i) {
                stbi__uint32 v = (bpp == 16 ? (stbi__uint32) stbi__get16le(s) : stbi__get32le(s));
@@ -5721,15 +5838,10 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
                out[z++] = STBI__BYTECAST(stbi__shiftsigned(v & mb, bshift, bcount));
                a = (ma ? stbi__shiftsigned(v & ma, ashift, acount) : 255);
                all_a |= a;
-               printf("Locked in other loop...\n");
                if (target == 4) out[z++] = STBI__BYTECAST(a);
             }
-            printf("Second Case...\n");
          }
-         printf("Trying to skip, what will happen?\n");
          stbi__skip(s, pad);
-         //printf("Post skip...\n");
-         printf("Our y is %lu, our cur is %zu\n",s->img_y, j);
       }
    }
 
@@ -7752,7 +7864,7 @@ STBIDEF int stbi_is_16_bit(char const *filename)
     return result;
 }
 
-STBIDEF int stbi_is_16_bit_from_file(FILE *f)
+STBIDEF int stbi_is_16_bit_from_file(FIL *f)
 {
    int r;
    stbi__context s;
