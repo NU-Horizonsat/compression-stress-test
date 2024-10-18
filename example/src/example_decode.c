@@ -16,8 +16,8 @@ const char compressed_filename[] = "../compressed.bin";
 const char filename[] = "../decompress.bmp";
 
 int main() {
-    const size_t out_w = 1000;
-    const size_t out_h = 1000;
+    const size_t out_w = 128;
+    const size_t out_h = 128;
     const int stages = 4;
     const enum icer_filter_types filt = ICER_FILTER_A;
     const int segments = 6;

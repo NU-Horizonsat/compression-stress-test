@@ -24,12 +24,12 @@ uint32_t __inline __clz( uint32_t value ) {
 }
 #endif
 
-#define ICER_CIRC_BUF_SIZE 2048
-#define MAX_K 12
-#define ICER_MAX_SEGMENTS 10
-#define ICER_MAX_DECOMP_STAGES 6
-#define ICER_MAX_PACKETS 300
-#define ICER_MAX_PACKETS_16 300
+#define ICER_CIRC_BUF_SIZE 1024
+#define MAX_K 6
+#define ICER_MAX_SEGMENTS 6
+#define ICER_MAX_DECOMP_STAGES 3
+#define ICER_MAX_PACKETS 150
+#define ICER_MAX_PACKETS_16 150
 #define ICER_BITPLANES_TO_COMPRESS_8 9
 #define ICER_BITPLANES_TO_COMPRESS_16 9
 

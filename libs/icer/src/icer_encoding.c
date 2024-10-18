@@ -208,7 +208,6 @@ static inline int16_t alloc_buf(icer_encoder_context_typedef *cntxt) {
 /* data packet functions */
 
 int icer_allocate_data_packet(icer_image_segment_typedef **pkt, icer_output_data_buf_typedef * const output_data, uint8_t segment_num, const icer_packet_context *context) {
-    printf("Avail Mem:  %u\n", getFreeHeap());
     size_t buf_len = output_data->size_allocated - output_data->size_used;
     if (buf_len < sizeof(icer_image_segment_typedef)) {
         return ICER_BYTE_QUOTA_EXCEEDED;

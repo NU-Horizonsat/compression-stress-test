@@ -837,36 +837,23 @@ static void stbi__start_mem(stbi__context *s, stbi_uc const *buffer, int len)
 // initialize a callback-based context
 static void stbi__start_callbacks(stbi__context *s, stbi_io_callbacks *c, void *user)
 {
-   printf("1\n");
    s->io = *c;
-   printf("2\n");
    s->io_user_data = user;
-   printf("3\n");
    s->buflen = sizeof(s->buffer_start);
-   printf("4\n");
    s->read_from_callbacks = 1;
-   printf("5\n");
    s->callback_already_read = 0;
-   printf("6\n");
    s->img_buffer = s->img_buffer_original = s->buffer_start;
-   printf("7\n");
    stbi__refill_buffer(s);
-   printf("8\n");
    s->img_buffer_original_end = s->img_buffer_end;
-   printf("9\n");
 }
 
 #ifndef STBI_NO_STDIO
 
 static int stbi__stdio_read(void *user, char *data, int size)
 {
-   printf("Attempted to perform the read!");
    UINT br = 0;  // Properly declare a UINT variable
-   printf("1!");
    f_read((FIL *) user, data, size, &br);  // Pass the address of 'br'
-   printf("2!");
    int return_val = br;  // Now, 'br' is valid and contains the number of bytes read
-   printf("3!");
    return return_val;
 }
 
@@ -997,6 +984,7 @@ static int stbi__err(const char *str)
 
 static void *stbi__malloc(size_t size)
 {
+    printf("Allocating memory of size: %zu bytes\n", size);
     return STBI_MALLOC(size);
 }
 
@@ -1380,10 +1368,8 @@ STBIDEF stbi_uc *stbi_load(char const *filename, int *x, int *y, int *comp, int 
 {
    FIL fil;
    FRESULT fr = f_open(&fil, filename, FA_READ);
-   printf("FRESULT: %d\n", fr);
 
    unsigned char *result;
-   printf("Finished opening, trying to load...\n");
    result = stbi_load_from_file(&fil,x,y,comp,req_comp);
    f_close(&fil);
    return result;
@@ -1393,11 +1379,8 @@ STBIDEF stbi_uc *stbi_load_from_file(FIL *f, int *x, int *y, int *comp, int req_
 {
    unsigned char *result;
    stbi__context s;
-   printf("Starting file..\n");
    stbi__start_file(&s,f);
-   printf("Trying to post-process now...\n");
    result = stbi__load_and_postprocess_8bit(&s,x,y,comp,req_comp);
-   printf("Done post processing, lets go!\n");
    if (result) {
    // need to 'unget' all the characters in the IO buffer
       f_lseek(f, - (int) (s.img_buffer_end - s.img_buffer));
@@ -1700,15 +1683,11 @@ static void stbi__refill_buffer(stbi__context *s)
 stbi_inline static stbi_uc stbi__get8(stbi__context *s)
 {
    if (s->img_buffer < s->img_buffer_end)
-      //printf("Buffer Comp\n");
-      //printf("%u\n", &s->img_buffer);
-      //printf("%u\n", &s->img_buffer_end);
       return *s->img_buffer++;
    if (s->read_from_callbacks) {
       stbi__refill_buffer(s);
       return *s->img_buffer++;
    }
-   printf("case 3");
    return 0;
 }
 
@@ -5449,10 +5428,8 @@ static int stbi__bmp_test_raw(stbi__context *s)
 
 static int stbi__bmp_test(stbi__context *s)
 {
-   printf("Starting the test...\n");
    int r = stbi__bmp_test_raw(s);
    stbi__rewind(s);
-   printf("Done with the test!\n");
    return r;
 }
 
@@ -5621,7 +5598,6 @@ static void *stbi__bmp_parse_header(stbi__context *s, stbi__bmp_data *info)
 
 static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req_comp, stbi__result_info *ri)
 {
-   printf("Starting the bmp load...\n");
    stbi_uc *out;
    unsigned int mr=0,mg=0,mb=0,ma=0, all_a;
    stbi_uc pal[256][4];
@@ -5634,7 +5610,6 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
    if (stbi__bmp_parse_header(s, &info) == NULL)
       return NULL; // error code already set
 
-   printf("Finished parsing the header...\n");
    flip_vertically = ((int) s->img_y) > 0;
    s->img_y = abs((int) s->img_y);
 
@@ -5674,7 +5649,6 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
       }
    }
 
-   printf("Checkpoint 1...\n");
    if (info.bpp == 24 && ma == 0xff000000)
       s->img_n = 3;
    else
@@ -5688,7 +5662,6 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
    if (!stbi__mad3sizes_valid(target, s->img_x, s->img_y, 0))
       return stbi__errpuc("too large", "Corrupt BMP");
 
-   printf("Checkpoint 1.1...\n");
    out = (stbi_uc *) stbi__malloc_mad3(target, s->img_x, s->img_y, 0);
    printf("The x size is %lu", s->img_x);
    printf("The y size is %lu", s->img_y);
@@ -5703,7 +5676,6 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
          if (info.hsz != 12) stbi__get8(s);
          pal[i][3] = 255;
       }
-      printf("Checkpoint 1.1a...\n");
       stbi__skip(s, info.offset - info.extra_read - info.hsz - psize * (info.hsz == 12 ? 3 : 4));
       if (info.bpp == 1) width = (s->img_x + 7) >> 3;
       else if (info.bpp == 4) width = (s->img_x + 1) >> 1;
@@ -5728,7 +5700,6 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
             stbi__skip(s, pad);
          }
       } else {
-         printf("Checkpoint 1.1b...\n");
          for (j=0; j < (int) s->img_y; ++j) {
             for (i=0; i < (int) s->img_x; i += 2) {
                int v=stbi__get8(s),v2=0;
@@ -5751,7 +5722,6 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
          }
       }
    } else {
-      printf("Checkpoint 1.2a...\n");
       int rshift=0,gshift=0,bshift=0,ashift=0,rcount=0,gcount=0,bcount=0,acount=0;
       int z = 0;
       int easy=0;
@@ -5775,7 +5745,6 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
          ashift = stbi__high_bit(ma)-7; acount = stbi__bitcount(ma);
          if (rcount > 8 || gcount > 8 || bcount > 8 || acount > 8) { STBI_FREE(out); return stbi__errpuc("bad masks", "Corrupt BMP"); }
       }
-      printf("Checkpoint 1.3a...\n");
       for (j=0; j < (int) s->img_y; ++j) {
          if (easy) {
             for (i=0; i < (int) s->img_x; ++i) {
@@ -5806,22 +5775,17 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
                }
                out[z+1] = temp_var2;
 
-               printf("We are stuck at this point\n");
                stbi_uc temp_var3;
                if (s->img_buffer < s->img_buffer_end) {
-                  printf("Here\n");
                   temp_var3 = *s->img_buffer++;
                }
                else if (s->read_from_callbacks) {
-                  printf("There\n");
                   stbi__refill_buffer(s);
                   temp_var3 = *s->img_buffer++;
                }
                else {
-                  printf("Where\n");
                   temp_var3 = 0;
                }
-               printf("Actually, this point\n");
                out[z+0] = temp_var3;
                z += 3;
                a = (easy == 2 ? stbi__get8(s) : 255);
@@ -5845,7 +5809,6 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
       }
    }
 
-   printf("Checkpoint 2...\n");
    // if alpha channel is all 0s, replace with all 255s
    if (target == 4 && all_a == 0)
       for (i=4*s->img_x*s->img_y-1; i >= 0; i -= 4)
@@ -5862,7 +5825,6 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
       }
    }
 
-   printf("Checkpoint 3...\n");
    if (req_comp && req_comp != target) {
       out = stbi__convert_format(out, target, req_comp, s->img_x, s->img_y);
       if (out == NULL) return out; // stbi__convert_format frees input on failure
