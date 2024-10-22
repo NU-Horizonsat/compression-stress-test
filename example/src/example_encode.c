@@ -26,7 +26,7 @@ int example_compression_function() {
     const enum icer_filter_types filt = ICER_FILTER_A;
     const int segments = 6;
 
-    const int datastream_size = 1000;
+    const int datastream_size = 3000;
 
     int src_w, src_h, n;
     uint8_t *data;
@@ -66,7 +66,7 @@ int example_compression_function() {
     icer_init_output_struct(&output, datastream, datastream_size*2, datastream_size);
 
     uint64_t begin = time_us_64();  // Start time in microseconds
-    icer_compress_image_uint16(compress, out_w, out_h, stages, filt, segments, &output);
+    printf("The error is %u\n", icer_compress_image_uint16(compress, out_w, out_h, stages, filt, segments, &output));
     uint64_t end = time_us_64();    // End time in microseconds
 
     float time_taken_ms = (end - begin) / 1000.0;  // Convert to milliseconds

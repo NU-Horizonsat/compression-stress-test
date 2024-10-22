@@ -301,6 +301,8 @@ int icer_compress_image_uint16(uint16_t * const image, size_t image_w, size_t im
         return ICER_INTEGER_OVERFLOW;
     }
 
+    printf("1 here \n");
+
     int16_t *signed_pixel;
     for (size_t row = 0;row < ll_h;row++) {
         signed_pixel = (int16_t*)(image + image_w * row);
@@ -312,6 +314,7 @@ int icer_compress_image_uint16(uint16_t * const image, size_t image_w, size_t im
 
     icer_to_sign_magnitude_int16(image, image_w * image_h);
 
+    printf("2 here \n");
     uint64_t priority = 0;
     uint32_t ind = 0;
     for (uint8_t curr_stage = 1;curr_stage <= stages;curr_stage++) {
@@ -349,6 +352,7 @@ int icer_compress_image_uint16(uint16_t * const image, size_t image_w, size_t im
         }
     }
 
+    printf("3 here \n");
     priority = icer_pow_uint(2, stages);
     for (uint8_t lsb = 0;lsb < ICER_BITPLANES_TO_COMPRESS_16;lsb++) {
         icer_packets_16[ind].subband_type = ICER_SUBBAND_LL;
@@ -364,6 +368,7 @@ int icer_compress_image_uint16(uint16_t * const image, size_t image_w, size_t im
 
     qsort(icer_packets_16, ind, sizeof(icer_packet_context), comp_packet);
 
+    printf("4 here \n");
     for (int i = 0;i <= ICER_MAX_DECOMP_STAGES;i++) {
         for (int j = 0;j <= ICER_SUBBAND_MAX;j++) {
             for (int k = 0;k <= ICER_MAX_SEGMENTS;k++) {
@@ -374,38 +379,54 @@ int icer_compress_image_uint16(uint16_t * const image, size_t image_w, size_t im
         }
     }
 
+    printf("5 here \n");
     partition_param_typdef partition_params;
     uint16_t *data_start = image;
     for (size_t it = 0;it < ind;it++) {
         if (icer_packets_16[it].subband_type == ICER_SUBBAND_LL) {
+            printf("Check 1 \n");
             ll_w = icer_get_dim_n_low_stages(image_w, icer_packets_16[it].decomp_level);
             ll_h = icer_get_dim_n_low_stages(image_h, icer_packets_16[it].decomp_level);
             data_start = image;
+            printf("Check 2 \n");
         } else if (icer_packets_16[it].subband_type == ICER_SUBBAND_HL) {
+            printf("Check 1.1 \n");
             ll_w = icer_get_dim_n_high_stages(image_w, icer_packets_16[it].decomp_level);
             ll_h = icer_get_dim_n_low_stages(image_h, icer_packets_16[it].decomp_level);
             data_start = image + icer_get_dim_n_low_stages(image_w, icer_packets_16[it].decomp_level);
+            printf("Check 2.1 \n");
         } else if (icer_packets_16[it].subband_type == ICER_SUBBAND_LH) {
+            printf("Check 1.2 \n");
             ll_w = icer_get_dim_n_low_stages(image_w, icer_packets_16[it].decomp_level);
             ll_h = icer_get_dim_n_high_stages(image_h, icer_packets_16[it].decomp_level);
             data_start = image + icer_get_dim_n_low_stages(image_h, icer_packets_16[it].decomp_level) * image_w;
+            printf("Check 2.2 \n");
         } else if (icer_packets_16[it].subband_type == ICER_SUBBAND_HH) {
+            printf("Check 1.3 \n");
             ll_w = icer_get_dim_n_high_stages(image_w, icer_packets_16[it].decomp_level);
             ll_h = icer_get_dim_n_high_stages(image_h, icer_packets_16[it].decomp_level);
             data_start = image + icer_get_dim_n_low_stages(image_h, icer_packets_16[it].decomp_level) * image_w +
                          icer_get_dim_n_low_stages(image_w, icer_packets_16[it].decomp_level);
+            printf("Check 1.3 \n");
         } else {
+            printf("Check 12 \n");
             return ICER_FATAL_ERROR;
         }
 
+        printf("Prepartition \n");
         icer_generate_partition_parameters(&partition_params, ll_w, ll_h, segments);
+        printf("Failure here yo \n");
+        printf("Size used: %u\n", output_data->size_used);
         res = icer_compress_partition_uint16(data_start, &partition_params, image_w, &(icer_packets_16[it]),
                                              output_data, icer_rearrange_segments_16[chan][icer_packets_16[it].decomp_level][icer_packets_16[it].subband_type][icer_packets_16[it].lsb]);
+        printf("Failure here bruh \n");
         if (res != ICER_RESULT_OK) {
+            printf("Do we ever exit out here\n");
             break;
         }
     }
 
+    printf("6 here \n");
     size_t rearrange_offset = 0;
     size_t len;
     for (int k = 0;k <= ICER_MAX_SEGMENTS;k++) {
@@ -422,6 +443,7 @@ int icer_compress_image_uint16(uint16_t * const image, size_t image_w, size_t im
         }
     }
 
+    printf("8 here \n");
     return res;
 }
 

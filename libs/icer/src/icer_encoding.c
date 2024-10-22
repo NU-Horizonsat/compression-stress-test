@@ -13,6 +13,7 @@ static inline uint16_t pop_buf(icer_encoder_context_typedef *cntxt);
 static inline int16_t alloc_buf(icer_encoder_context_typedef *cntxt);
 
 void icer_init_entropy_coder_context(icer_encoder_context_typedef *encoder_context, uint16_t *encode_buffer, size_t buffer_length, uint8_t *encoder_out, size_t enc_out_max) {
+    printf("We are in regards to %zu", enc_out_max);
     encoder_context->max_output_length = enc_out_max;
     encoder_context->output_buffer = encoder_out;
 
@@ -131,6 +132,7 @@ int icer_popbuf_while_avail(icer_encoder_context_typedef *encoder_context) {
                 encoder_context->output_buffer[encoder_context->output_ind] = 0;
             }
             if (encoder_context->output_ind == encoder_context->max_output_length) {
+                printf("Buf size %zu, requested %zu", encoder_context->max_output_length, encoder_context->output_ind);
                 return ICER_BYTE_QUOTA_EXCEEDED;
             }
         }
@@ -208,28 +210,50 @@ static inline int16_t alloc_buf(icer_encoder_context_typedef *cntxt) {
 /* data packet functions */
 
 int icer_allocate_data_packet(icer_image_segment_typedef **pkt, icer_output_data_buf_typedef * const output_data, uint8_t segment_num, const icer_packet_context *context) {
+    printf("What is the issue\n");
     size_t buf_len = output_data->size_allocated - output_data->size_used;
     if (buf_len < sizeof(icer_image_segment_typedef)) {
+        printf("Was the failure here at least?\n");
+        printf("Buf len %u\n", buf_len);
+        printf("seg size %u\n", sizeof(icer_image_segment_typedef));
         return ICER_BYTE_QUOTA_EXCEEDED;
     }
-    (*pkt) = malloc(sizeof(icer_image_segment_typedef));
-    (*pkt)->preamble = ICER_PACKET_PREAMBLE;
-    (*pkt)->decomp_level = context->decomp_level;
-    (*pkt)->subband_type = context->subband_type;
-    (*pkt)->segment_number = segment_num;
-    (*pkt)->lsb_chan = context->lsb | ICER_SET_CHANNEL_MACRO(context->channel);
-    (*pkt)->ll_mean_val = context->ll_mean_val;
-    (*pkt)->image_w = context->image_w;
-    (*pkt)->image_h = context->image_h;
-    (*pkt)->data_crc32 = 0;
-    (*pkt)->crc32 = 0;
+
+    printf("Buf len %u\n", buf_len);
+    printf("seg size %u\n", sizeof(icer_image_segment_typedef));
+    printf("What is the issue 1\n");
+    (*pkt) = (icer_image_segment_typedef *) (output_data->data_start + output_data->size_used);
+    printf("What is the issue 2\n");
+    icer_image_segment_typedef *packet;
+    packet = (icer_image_segment_typedef *) (output_data->data_start + output_data->size_used);
+    packet->preamble = ICER_PACKET_PREAMBLE;
+    printf("What is the issue 3\n");
+    packet->decomp_level = context->decomp_level;
+    printf("What is the issue 4\n");
+    packet->subband_type = context->subband_type;
+    printf("What is the issue 5\n");
+    packet->segment_number = segment_num;
+    printf("What is the issue 6\n");
+    packet->lsb_chan = context->lsb | ICER_SET_CHANNEL_MACRO(context->channel);
+    printf("What is the issue 7\n");
+    packet->ll_mean_val = context->ll_mean_val;
+    printf("What is the issue 8\n");
+    packet->image_w = context->image_w;
+    printf("What is the issue 9\n");
+    packet->image_h = context->image_h;
+    printf("What is the issue 10\n");
+    packet->data_crc32 = 0;
+    printf("What is the issue 11\n");
+    packet->crc32 = 0;
+    printf("What is the issue 12\n");
 
     output_data->size_used += sizeof(icer_image_segment_typedef);
     buf_len -= sizeof(icer_image_segment_typedef);
 
     // store max data length first
-    (*pkt)->data_length = buf_len;
+    packet->data_length = buf_len;
 
+    printf("Always here instead?\n");
     return ICER_RESULT_OK;
 }
 
