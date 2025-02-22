@@ -16,8 +16,8 @@
 #include "icer.h"
 #include "ff.h"
 
-const char compressed_filename[] = "image2.bin";
-const char filename[] = "white.bmp";
+const char compressed_filename[] = "test_image_compressed.bin";
+const char filename[] = "test_image.bmp";
 
 int example_compression_function() {
     const size_t out_w = 128;
@@ -26,7 +26,7 @@ int example_compression_function() {
     const enum icer_filter_types filt = ICER_FILTER_A;
     const int segments = 6;
 
-    const int datastream_size = 3000;
+    const int datastream_size = 40000;
 
     int src_w, src_h, n;
     uint8_t *data;
@@ -54,11 +54,13 @@ int example_compression_function() {
         return 0;
     }
     printf("resize complete\n");
+    stbi_image_free(data);
 
     printf("converting to int16\n");
     for (size_t i = 0;i < out_h*out_w;i++) {
         compress[i] = resized[i];
     }
+    free(resized);
     
     uint8_t *datastream = malloc(datastream_size*2+500);
     
@@ -80,10 +82,8 @@ int example_compression_function() {
     printf("Size used: %u\n", output.size_used);
 
     f_close(&fil);
-    free(resized);
     free(compress);
     free(datastream);
-    stbi_image_free(data);
 
     printf("Successful Exit\n");
     return 0;

@@ -5,7 +5,8 @@
         "stb_image.h": "c",
         "time.h": "c",
         "stdbool.h": "c",
-        "random": "c"
+        "random": "c",
+        "icer.h": "c"
     },
     "cortex-debug.gdbPath": "gdb-multiarch"
 }

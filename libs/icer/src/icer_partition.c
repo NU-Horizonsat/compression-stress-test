@@ -296,7 +296,7 @@ int icer_compress_partition_uint16(const uint16_t *data, const partition_param_t
      * process top region which consists of c columns
      * height of top region is h_t and it contains r_t rows
      */
-    printf("Hang here 1\n");
+    printf("Sizes:%zu\n", params->r_t);
     for (uint16_t row = 0; row < params->r_t; row++) {
         /*
          * the first r_t0 rows have height y_t
@@ -304,21 +304,22 @@ int icer_compress_partition_uint16(const uint16_t *data, const partition_param_t
          */
         segment_h = params->y_t + ((row >= params->r_t0) ? 1 : 0);
         partition_col_ind = 0;
-
+        printf("internal params:%zu\n", params->c);
         for (uint16_t col = 0; col < params->c; col++) {
             /* the first c_t0 columns have width x_t
              * the remainder have width x_t + 1
              */
+            while (output_data->size_used % 4 != 0) {
+                output_data->data_start[output_data->size_used] = 0; // write a padding byte
+                output_data->size_used++;
+            }
+
             segment_w = params->x_t + ((col >= params->c_t0) ? 1 : 0);
             segment_start = data + partition_row_ind * rowstride + partition_col_ind;
             partition_col_ind += segment_w;
-            printf("Hang here 1.1\n");
             icer_init_context_model_vals(&context_model, pkt_context->subband_type);
-            printf("Hang here 1.2\n");
             res = icer_allocate_data_packet(&seg, output_data, segment_num, pkt_context);
-            printf("Hang here 1.3\n");
             if (res != ICER_RESULT_OK) {
-                printf("Failure here\n");
                 return res;
             }
             icer_init_entropy_coder_context(&context, icer_encode_circ_buf, ICER_CIRC_BUF_SIZE,
@@ -326,7 +327,6 @@ int icer_compress_partition_uint16(const uint16_t *data, const partition_param_t
             res = icer_compress_bitplane_uint16(segment_start, segment_w, segment_h, rowstride, &context_model, &context,
                                                pkt_context);
             if (res != ICER_RESULT_OK) {
-                printf("Failure here 2 %d\n", res);
                 output_data->size_used -= sizeof(icer_image_segment_typedef);
                 return res;
             }
@@ -336,11 +336,11 @@ int icer_compress_partition_uint16(const uint16_t *data, const partition_param_t
             seg->data_crc32 = icer_calculate_segment_crc32(seg);
             seg->crc32 = icer_calculate_packet_crc32(seg);
             output_data->size_used += data_in_bytes;
-            printf("We are currently using %zu", output_data->size_used);
+            printf("In Use: %zu\n", output_data->size_used);
 
             segments_encoded[segment_num] = seg;
             segment_num++;
-            printf("Hang here 1.8\n");
+
         }
         partition_row_ind += segment_h;
     }
@@ -359,6 +359,10 @@ int icer_compress_partition_uint16(const uint16_t *data, const partition_param_t
         partition_col_ind = 0;
 
         for (uint16_t col = 0; col < (params->c + 1); col++) {
+            while (output_data->size_used % 4 != 0) {
+                output_data->data_start[output_data->size_used] = 0; // write a padding byte
+                output_data->size_used++;
+            }
             /* the first c_b0 columns have width x_b
              * the remainder have width x_b + 1
              */
